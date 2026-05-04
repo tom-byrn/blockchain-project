@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sepolia Ticketing DApp</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">TT</span>
+      <div>
+        <h1>TicketToken</h1>
+        <p>Sepolia ticketing DApp</p>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Main navigation">
+      <button class="tab-button active" type="button" data-tab="contractInfo">Contract Info</button>
+      <button class="tab-button" type="button" data-tab="createWallet">Create Wallet</button>
+      <button class="tab-button" type="button" data-tab="checkBalances">Check Balances</button>
+      <button class="tab-button" type="button" data-tab="buyTicket">Buy Ticket</button>
+      <button class="tab-button" type="button" data-tab="returnTicket">Return Ticket</button>
+    </nav>
+
+    <div class="sidebar-note">
+      <strong>Network</strong>
+      <span id="sidebarNetwork">Sepolia</span>
+    </div>
+  </aside>
+
+  <main class="app-shell">
+    <header class="page-header">
+      <div>
+        <h2>Web3 ticketing system</h2>
+        <p class="page-intro">Create keystore wallets, inspect SETH and ticket balances, buy one ERC-20 ticket, and return it to the vendor.</p>
+      </div>
+      <div class="header-actions">
+        <button class="secondary-button" type="button" id="connectMetaMaskButton">Connect MetaMask</button>
+        <span class="status-pill" id="configStatus">Checking config</span>
+      </div>
+    </header>
+
+    <div class="app-message" id="appMessage" role="status" aria-live="polite"></div>
+
+    <section class="tab-panel active" id="contractInfo">
+      <div class="section-heading">
+        <h3>Contract Info</h3>
+        <p>Use this page after deploying <code>contracts/TicketToken.sol</code> in Remix. Update <code>js/config.js</code> with the deployed address and vendor wallet.</p>
+      </div>
+
+      <div class="grid two-columns">
+        <article class="panel-card">
+          <h4>Current configuration</h4>
+          <dl class="detail-list">
+            <div>
+              <dt>RPC</dt>
+              <dd id="rpcUrlText"></dd>
+            </div>
+            <div>
+              <dt>Chain ID</dt>
+              <dd id="chainIdText"></dd>
+            </div>
+            <div>
+              <dt>Contract</dt>
+              <dd><a id="contractAddressLink" href="#" target="_blank" rel="noreferrer">Not configured</a></dd>
+            </div>
+            <div>
+              <dt>Vendor</dt>
+              <dd><a id="vendorAddressLink" href="#" target="_blank" rel="noreferrer">Not configured</a></dd>
+            </div>
+            <div>
+              <dt>Ticket price</dt>
+              <dd id="ticketPriceText"></dd>
+            </div>
+          </dl>
+          <button class="primary-button" type="button" id="refreshContractButton">Read Contract</button>
+        </article>
+
+        <article class="panel-card">
+          <h4>Deployment values for Remix</h4>
+          <p class="muted">Suggested constructor arguments:</p>
+          <pre class="code-block">"Campus Event Ticket", "TICKET", "&lt;vendor-wallet&gt;", 10000000000000, 100</pre>
+          <p class="muted">After deployment, paste the contract address and vendor address into <code>js/config.js</code>, then reload Live Server.</p>
+        </article>
+      </div>
+
+      <div class="stats-grid" id="contractStats">
+        <article class="stat-card">
+          <span>Token</span>
+          <strong id="statTokenName">Not loaded</strong>
+        </article>
+        <article class="stat-card">
+          <span>Total tickets</span>
+          <strong id="statTotalSupply">-</strong>
+        </article>
+        <article class="stat-card">
+          <span>Available</span>
+          <strong id="statAvailableTickets">-</strong>
+        </article>
+        <article class="stat-card">
+          <span>Sold / held by attendees</span>
+          <strong id="statSoldTickets">-</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="createWallet">
+      <div class="section-heading">
+        <h3>Create Wallet</h3>
+        <p>Create an Ethereum wallet in the browser, encrypt it with a password, and download the keystore JSON file.</p>
+      </div>
+
+      <div class="grid two-columns">
+        <form class="panel-card form-stack" id="createWalletForm">
+          <h4>New keystore wallet</h4>
+          <label>
+            Keystore password
+            <input type="password" id="walletPassword" autocomplete="new-password" placeholder="Choose a strong password">
+          </label>
+          <label>
+            Confirm password
+            <input type="password" id="walletPasswordConfirm" autocomplete="new-password" placeholder="Repeat password">
+          </label>
+          <button class="primary-button" type="submit">Create Wallet</button>
+          <p class="warning-text">Keep the keystore file and password together only for testing. Anyone with the private key can spend the wallet funds.</p>
+        </form>
+
+        <article class="panel-card form-stack">
+          <h4>Created wallet details</h4>
+          <label>
+            Wallet address
+            <input type="text" id="createdWalletAddress" readonly placeholder="No wallet created yet">
+          </label>
+          <label>
+            Private key
+            <div class="inline-field">
+              <input type="password" id="createdPrivateKey" readonly placeholder="Hidden until wallet is created">
+              <button class="secondary-button compact" type="button" id="togglePrivateKeyButton">Reveal</button>
+            </div>
+          </label>
+          <label>
+            Encrypted keystore JSON
+            <textarea id="createdKeystore" readonly placeholder="Keystore JSON will appear here"></textarea>
+          </label>
+          <button class="secondary-button" type="button" id="downloadKeystoreButton" disabled>Download Keystore</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="checkBalances">
+      <div class="section-heading">
+        <h3>Check Balances</h3>
+        <p>Attendees can confirm purchases, the doorman can verify a ticket holder, and the venue can monitor ticket distribution.</p>
+      </div>
+
+      <div class="panel-card form-stack">
+        <div class="form-row">
+          <label>
+            Actor
+            <select id="actorType">
+              <option value="Attendee">Attendee</option>
+              <option value="Doorman">Doorman</option>
+              <option value="Venue">Venue</option>
+            </select>
+          </label>
+          <label>
+            Wallet address
+            <input type="text" id="balanceAddress" placeholder="0x...">
+          </label>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" type="button" id="checkBalanceButton">Check Balances</button>
+          <button class="secondary-button" type="button" id="useMetaMaskForBalanceButton">Use MetaMask</button>
+          <button class="secondary-button" type="button" id="useCreatedWalletForBalanceButton">Use Created Wallet</button>
+          <button class="secondary-button" type="button" id="useVendorForBalanceButton">Use Vendor</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span>Wallet</span>
+          <strong id="balanceWalletResult">-</strong>
+        </article>
+        <article class="stat-card">
+          <span>SETH balance</span>
+          <strong id="cryptoBalanceResult">-</strong>
+        </article>
+        <article class="stat-card">
+          <span>Ticket balance</span>
+          <strong id="ticketBalanceResult">-</strong>
+        </article>
+        <article class="stat-card">
+          <span>Distribution</span>
+          <strong id="distributionResult">-</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="buyTicket">
+      <div class="section-heading">
+        <h3>Buy Ticket</h3>
+        <p>Buy exactly one ticket token using the configured Sepolia ticket price.</p>
+      </div>
+
+      <div class="grid two-columns">
+        <article class="panel-card form-stack">
+          <h4>Buy with MetaMask</h4>
+          <p class="muted">MetaMask signs the transaction and shows the Sepolia gas estimate before submission.</p>
+          <button class="primary-button" type="button" id="buyWithMetaMaskButton">Buy Ticket with MetaMask</button>
+        </article>
+
+        <article class="panel-card form-stack">
+          <h4>Buy with keystore</h4>
+          <label>
+            Keystore JSON file
+            <input type="file" id="buyKeystoreFile" accept=".json,application/json">
+          </label>
+          <label>
+            Keystore password
+            <input type="password" id="buyKeystorePassword" autocomplete="current-password">
+          </label>
+          <div class="button-row">
+            <button class="secondary-button" type="button" id="loadBuyKeystoreButton">Load Wallet</button>
+            <button class="primary-button" type="button" id="buyWithKeystoreButton">Buy Ticket</button>
+          </div>
+          <label>
+            Loaded wallet
+            <input type="text" id="buyLoadedAddress" readonly placeholder="No keystore loaded">
+          </label>
+        </article>
+      </div>
+
+      <article class="panel-card form-stack">
+        <h4>Purchase transaction</h4>
+        <div id="buyExplorerLink" class="link-output"></div>
+        <label>
+          Transaction request
+          <textarea id="buyTransactionRequest" readonly></textarea>
+        </label>
+        <label>
+          Transaction receipt
+          <textarea id="buyTransactionResult" readonly></textarea>
+        </label>
+      </article>
+    </section>
+
+    <section class="tab-panel" id="returnTicket">
+      <div class="section-heading">
+        <h3>Return Ticket</h3>
+        <p>Return one ticket token to the vendor wallet. This project models returns as token transfers without refunds.</p>
+      </div>
+
+      <div class="grid two-columns">
+        <article class="panel-card form-stack">
+          <h4>Return with MetaMask</h4>
+          <p class="muted">Use this when the ticket holder controls the wallet in MetaMask.</p>
+          <button class="primary-button" type="button" id="returnWithMetaMaskButton">Return Ticket with MetaMask</button>
+        </article>
+
+        <article class="panel-card form-stack">
+          <h4>Return with keystore</h4>
+          <label>
+            Keystore JSON file
+            <input type="file" id="returnKeystoreFile" accept=".json,application/json">
+          </label>
+          <label>
+            Keystore password
+            <input type="password" id="returnKeystorePassword" autocomplete="current-password">
+          </label>
+          <div class="button-row">
+            <button class="secondary-button" type="button" id="loadReturnKeystoreButton">Load Wallet</button>
+            <button class="primary-button" type="button" id="returnWithKeystoreButton">Return Ticket</button>
+          </div>
+          <label>
+            Loaded wallet
+            <input type="text" id="returnLoadedAddress" readonly placeholder="No keystore loaded">
+          </label>
+        </article>
+      </div>
+
+      <article class="panel-card form-stack">
+        <h4>Return transaction</h4>
+        <div id="returnExplorerLink" class="link-output"></div>
+        <label>
+          Transaction request
+          <textarea id="returnTransactionRequest" readonly></textarea>
+        </label>
+        <label>
+          Transaction receipt
+          <textarea id="returnTransactionResult" readonly></textarea>
+        </label>
+      </article>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.4/dist/web3.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
