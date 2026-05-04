@@ -9,10 +9,6 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 - `js/config.js` - Sepolia RPC, contract address, vendor address, ticket price, and ABI.
 - `js/app.js` - Web3.js wallet, balance, MetaMask, keystore, and transaction logic.
 - `contracts/TicketToken.sol` - handwritten ERC-20-compatible ticket token contract.
-- `docs/project-report.md` - report template with required sections and evidence links.
-- `docs/deployment-details.md` - contract and wallet deployment details to fill after Sepolia deployment.
-- `docs/peer-review-reflection.md` - peer review reflection template.
-- `docs/generative-ai-statement.md` - statement on use of generative AI.
 - `referenceProject/` - uploaded reference project kept for comparison only.
 
 ## How to Run
@@ -47,7 +43,7 @@ vendorAddress: "<vendor-wallet-address>",
 
 ## Sepolia Evidence To Collect
 
-Add links to `docs/project-report.md` and `docs/deployment-details.md` for:
+Record these links in the external project report:
 
 - Contract deployment transaction.
 - Successful `buyTicket()` transaction.
