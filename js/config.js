@@ -5,9 +5,8 @@ window.TICKET_DAPP_CONFIG = {
   rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
   explorerBaseUrl: "https://sepolia.etherscan.io",
 
-  // Fill these in after deploying contracts/TicketToken.sol with Remix.
-  contractAddress: "",
-  vendorAddress: "",
+  contractAddress: "0xE8d93935b59499b03782b35bFEe1aaaAEa7C7cD5",
+  vendorAddress: "0x1a18F2F851BAfDA9e11eA5cC82893F2729a11cC3",
 
   // 0.00001 SETH per ticket. Use this value as the Remix constructor ticketPriceWei.
   ticketPriceWei: "10000000000000",
