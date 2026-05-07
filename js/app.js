@@ -48,7 +48,7 @@
     byId("checkBalanceButton").addEventListener("click", checkBalances);
     byId("useMetaMaskForBalanceButton").addEventListener("click", useMetaMaskForBalance);
     byId("useCreatedWalletForBalanceButton").addEventListener("click", useCreatedWalletForBalance);
-    byId("useVendorForBalanceButton").addEventListener("click", useVendorForBalance);
+    byId("useVenueForBalanceButton").addEventListener("click", useVenueForBalance);
 
     byId("loadBuyKeystoreButton").addEventListener("click", loadBuyKeystore);
     byId("buyWithKeystoreButton").addEventListener("click", buyWithKeystore);
@@ -88,7 +88,7 @@
 
     status.textContent = "Add deployment details";
     status.classList.remove("ready");
-    showMessage("Deploy the Solidity contract in Remix, then update js/config.js with the contract and vendor addresses.", "error");
+    showMessage("Deploy the Solidity contract in Remix, then update js/config.js with the contract and venue wallet addresses.", "error");
   }
 
   function setAddressLink(id, address, type) {
@@ -233,19 +233,18 @@
     showMessage("Created wallet address copied into the balance checker.", "success");
   }
 
-  function useVendorForBalance() {
+  function useVenueForBalance() {
     if (!isConfiguredAddress(CONFIG.vendorAddress)) {
-      showMessage("Add the vendor address to js/config.js first.", "error");
+      showMessage("Add the venue wallet address to js/config.js first.", "error");
       return;
     }
 
     byId("balanceAddress").value = CONFIG.vendorAddress;
-    showMessage("Configured vendor address copied into the balance checker.", "success");
+    showMessage("Configured venue wallet address copied into the balance checker.", "success");
   }
 
   async function checkBalances() {
     const address = byId("balanceAddress").value.trim();
-    const actor = byId("actorType").value;
 
     if (!Web3.utils.isAddress(address)) {
       showMessage("Enter a valid Ethereum wallet address.", "error");
@@ -253,7 +252,7 @@
     }
 
     try {
-      showMessage(`Checking ${actor} balances on Sepolia...`, "");
+      showMessage("Checking wallet balances on Sepolia...", "");
       const balanceWei = await readWeb3.eth.getBalance(address);
       byId("balanceWalletResult").textContent = shortenAddress(address);
       byId("cryptoBalanceResult").textContent = `${formatWei(balanceWei)} SETH`;
@@ -275,7 +274,7 @@
 
       byId("ticketBalanceResult").textContent = `${ticketBalance} ticket${ticketBalance === "1" ? "" : "s"}`;
       byId("distributionResult").textContent = `${sold} sold, ${available} available`;
-      showMessage(`${actor} balance check completed.`, "success");
+      showMessage("Wallet balance check completed.", "success");
     } catch (error) {
       showMessage(error.message, "error");
     }

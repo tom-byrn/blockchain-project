@@ -6,7 +6,7 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 
 - `index.html` - tabbed frontend for wallet creation, balance checks, ticket purchase, ticket return, and contract information.
 - `css/styles.css` - frontend styling.
-- `js/config.js` - Sepolia RPC, contract address, vendor address, ticket price, and ABI.
+- `js/config.js` - Sepolia RPC, contract address, venue wallet address, ticket price, and ABI.
 - `js/app.js` - Web3.js wallet, balance, MetaMask, keystore, and transaction logic.
 - `contracts/TicketToken.sol` - handwritten ERC-20-compatible ticket token contract.
 - `referenceProject/` - uploaded reference project kept for comparison only.
@@ -28,7 +28,7 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 6. Deploy with constructor values similar to:
 
 ```text
-"Campus Event Ticket", "TICKET", "<vendor-wallet-address>", 10000000000000, 100
+"Campus Event Ticket", "TICKET", "<venue-wallet-address>", 10000000000000, 100
 ```
 
 7. Copy the deployed contract address.
@@ -36,7 +36,7 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 
 ```js
 contractAddress: "<deployed-contract-address>",
-vendorAddress: "<vendor-wallet-address>",
+vendorAddress: "<venue-wallet-address>",
 ```
 
 9. Reload Live Server and use the "Contract Info" page to confirm the deployed contract values.
@@ -49,6 +49,6 @@ Record these links in the external project report:
 - Successful `buyTicket()` transaction.
 - Sepolia ETH top-up transaction for the contract creator wallet.
 - Sepolia ETH top-up transaction for the ticket purchaser wallet.
-- Sepolia ETH top-up transaction for the vendor / doorman wallet.
+- Sepolia ETH top-up transaction for the venue wallet.
 
 Use <https://sepolia.etherscan.io/> for transaction and address links.
