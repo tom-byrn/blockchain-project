@@ -35,7 +35,7 @@
     <header class="page-header">
       <div>
         <h2>Web3 ticketing system</h2>
-        <p class="page-intro">Create keystore wallets, inspect SETH and ticket balances, buy one ERC-20 ticket, and return it to the vendor.</p>
+        <p class="page-intro">Create keystore wallets, inspect SETH and ticket balances, buy one ERC-20 ticket, and return it to the venue.</p>
       </div>
       <div class="header-actions">
         <button class="secondary-button" type="button" id="connectMetaMaskButton">Connect MetaMask</button>
@@ -48,7 +48,7 @@
     <section class="tab-panel active" id="contractInfo">
       <div class="section-heading">
         <h3>Contract Info</h3>
-        <p>Use this page after deploying <code>contracts/TicketToken.sol</code> in Remix. Update <code>js/config.js</code> with the deployed address and vendor wallet.</p>
+        <p>Use this page after deploying <code>contracts/TicketToken.sol</code> in Remix. Update <code>js/config.js</code> with the deployed address and venue wallet.</p>
       </div>
 
       <div class="grid two-columns">
@@ -68,7 +68,7 @@
               <dd><a id="contractAddressLink" href="#" target="_blank" rel="noreferrer">Not configured</a></dd>
             </div>
             <div>
-              <dt>Vendor</dt>
+              <dt>Venue wallet</dt>
               <dd><a id="vendorAddressLink" href="#" target="_blank" rel="noreferrer">Not configured</a></dd>
             </div>
             <div>
@@ -82,8 +82,8 @@
         <article class="panel-card">
           <h4>Deployment values for Remix</h4>
           <p class="muted">Suggested constructor arguments:</p>
-          <pre class="code-block">"Campus Event Ticket", "TICKET", "&lt;vendor-wallet&gt;", 10000000000000, 100</pre>
-          <p class="muted">After deployment, paste the contract address and vendor address into <code>js/config.js</code>, then reload Live Server.</p>
+          <pre class="code-block">"Campus Event Ticket", "TICKET", "&lt;venue-wallet&gt;", 10000000000000, 100</pre>
+          <p class="muted">After deployment, paste the contract address and venue wallet address into <code>js/config.js</code>, then reload Live Server.</p>
         </article>
       </div>
 
@@ -153,29 +153,19 @@
     <section class="tab-panel" id="checkBalances">
       <div class="section-heading">
         <h3>Check Balances</h3>
-        <p>Attendees can confirm purchases, the doorman can verify a ticket holder, and the venue can monitor ticket distribution.</p>
+        <p>Enter any wallet address to check its SETH and ticket balance. At the door, venue staff can check an attendee wallet before asking the attendee to return the ticket to the venue.</p>
       </div>
 
       <div class="panel-card form-stack">
-        <div class="form-row">
-          <label>
-            Actor
-            <select id="actorType">
-              <option value="Attendee">Attendee</option>
-              <option value="Doorman">Doorman</option>
-              <option value="Venue">Venue</option>
-            </select>
-          </label>
-          <label>
-            Wallet address
-            <input type="text" id="balanceAddress" placeholder="0x...">
-          </label>
-        </div>
+        <label>
+          Wallet address
+          <input type="text" id="balanceAddress" placeholder="0x...">
+        </label>
         <div class="button-row">
           <button class="primary-button" type="button" id="checkBalanceButton">Check Balances</button>
           <button class="secondary-button" type="button" id="useMetaMaskForBalanceButton">Use MetaMask</button>
           <button class="secondary-button" type="button" id="useCreatedWalletForBalanceButton">Use Created Wallet</button>
-          <button class="secondary-button" type="button" id="useVendorForBalanceButton">Use Vendor</button>
+          <button class="secondary-button" type="button" id="useVenueForBalanceButton">Use Venue</button>
         </div>
       </div>
 
@@ -250,7 +240,7 @@
     <section class="tab-panel" id="returnTicket">
       <div class="section-heading">
         <h3>Return Ticket</h3>
-        <p>Return one ticket token to the vendor wallet. This project models returns as token transfers without refunds.</p>
+        <p>Return one ticket token to the venue wallet. This project models returns as token transfers without refunds.</p>
       </div>
 
       <div class="grid two-columns">
