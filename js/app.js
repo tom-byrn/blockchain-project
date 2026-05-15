@@ -46,7 +46,7 @@
 
     byId("checkBalanceButton").addEventListener("click", checkBalances);
     byId("useCreatedWalletForBalanceButton").addEventListener("click", useCreatedWalletForBalance);
-    byId("useVenueForBalanceButton").addEventListener("click", useVenueForBalance);
+    byId("checkVendorBalanceButton").addEventListener("click", checkVendorBalance);
 
     byId("loadBuyKeystoreButton").addEventListener("click", loadBuyKeystore);
     byId("buyWithKeystoreButton").addEventListener("click", buyWithKeystore);
@@ -219,14 +219,14 @@
     showMessage("Created wallet address copied into the balance checker.", "success");
   }
 
-  function useVenueForBalance() {
+  function checkVendorBalance() {
     if (!isConfiguredAddress(CONFIG.vendorAddress)) {
-      showMessage("Add the venue wallet address to js/config.js first.", "error");
+      showMessage("Add the vendor wallet address to js/config.js first.", "error");
       return;
     }
 
     byId("balanceAddress").value = CONFIG.vendorAddress;
-    showMessage("Configured venue wallet address copied into the balance checker.", "success");
+    checkBalances();
   }
 
   async function checkBalances() {
