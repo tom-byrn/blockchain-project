@@ -7,7 +7,7 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 - `index.html` - tabbed frontend for wallet creation, balance checks, ticket purchase, ticket return, and contract information.
 - `css/styles.css` - frontend styling.
 - `js/config.js` - Sepolia RPC, contract address, venue wallet address, ticket price, and ABI.
-- `js/app.js` - Web3.js wallet, balance, keystore, and transaction logic.
+- `js/*.js` - frontend configuration, shared state, UI helpers, contract reads, wallet handling, balance checks, and keystore transaction logic.
 - `contracts/TicketToken.sol` - handwritten ERC-20-compatible ticket token contract.
 - `referenceProject/` - uploaded reference project kept for comparison only.
 
