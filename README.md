@@ -8,6 +8,7 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 - `css/styles.css` - frontend styling.
 - `js/config.js` - Sepolia RPC, contract address, venue wallet address, ticket price, and ABI.
 - `js/*.js` - frontend configuration, shared state, UI helpers, contract reads, wallet handling, balance checks, and keystore transaction logic.
+- `test/` - Node unit tests for the browser JavaScript modules using mocked DOM and Web3 objects.
 - `contracts/TicketToken.sol` - handwritten ERC-20-compatible ticket token contract.
 - `referenceProject/` - uploaded reference project kept for comparison only.
 
@@ -16,6 +17,16 @@ Static HTML/CSS/JavaScript DApp for a simple ERC-20 ticketing system on the Ethe
 1. Open this folder in Visual Studio Code or Finder.
 2. Open `index.html` directly in your browser.
 3. Internet access is required for the Web3.js CDN and Sepolia RPC calls.
+
+## How to Test
+
+Run the dependency-free unit tests with:
+
+```bash
+npm test
+```
+
+The tests use Node's built-in test runner and mocked browser/Web3 objects, so no local server or Sepolia RPC connection is required.
 
 ## Deploying the Contract With Remix
 
