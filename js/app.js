@@ -9,6 +9,8 @@
   let createdKeystoreJson = "";
   let buyKeystoreAccount = null;
   let returnKeystoreAccount = null;
+  let detectedMetaMaskProvider = null;
+  let providerDiscoveryStarted = false;
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -19,6 +21,7 @@
     }
 
     readWeb3 = new Web3(CONFIG.rpcUrl);
+    discoverWalletProviders();
     bindTabs();
     bindActions();
     renderStaticConfig();
@@ -215,7 +218,7 @@
 
   async function useMetaMaskForBalance() {
     try {
-      const account = await ensureMetaMaskAccount();
+      const { account } = await ensureMetaMaskAccount();
       byId("balanceAddress").value = account;
       showMessage("MetaMask address copied into the balance checker.", "success");
     } catch (error) {
@@ -327,8 +330,8 @@
     try {
       requireContractConfig();
       showMessage("Opening MetaMask purchase transaction...", "");
-      const account = await ensureMetaMaskAccount();
-      const providerWeb3 = new Web3(window.ethereum);
+      const { account, provider } = await ensureMetaMaskAccount();
+      const providerWeb3 = new Web3(provider);
       const contract = new providerWeb3.eth.Contract(CONFIG.abi, CONFIG.contractAddress);
       const ticketPriceWei = await getTicketPriceWei();
       const request = {
@@ -377,8 +380,8 @@
     try {
       requireContractConfig();
       showMessage("Opening MetaMask return transaction...", "");
-      const account = await ensureMetaMaskAccount();
-      const providerWeb3 = new Web3(window.ethereum);
+      const { account, provider } = await ensureMetaMaskAccount();
+      const providerWeb3 = new Web3(provider);
       const contract = new providerWeb3.eth.Contract(CONFIG.abi, CONFIG.contractAddress);
       const request = {
         from: account,
@@ -466,7 +469,7 @@
 
   async function connectMetaMaskClick() {
     try {
-      const account = await ensureMetaMaskAccount();
+      const { account } = await ensureMetaMaskAccount();
       showMessage(`MetaMask connected: ${shortenAddress(account)}`, "success");
     } catch (error) {
       showMessage(error.message, "error");
@@ -474,27 +477,101 @@
   }
 
   async function ensureMetaMaskAccount() {
-    if (!window.ethereum) {
-      throw new Error("MetaMask is not available in this browser.");
-    }
+    const provider = await getMetaMaskProvider();
 
-    await ensureSepoliaNetwork();
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    await ensureSepoliaNetwork(provider);
+    const accounts = await provider.request({ method: "eth_requestAccounts" });
     if (!accounts || accounts.length === 0) {
       throw new Error("No MetaMask account was selected.");
     }
 
-    return accounts[0];
+    return {
+      account: accounts[0],
+      provider
+    };
   }
 
-  async function ensureSepoliaNetwork() {
-    const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+  function discoverWalletProviders() {
+    if (providerDiscoveryStarted) {
+      return;
+    }
+
+    providerDiscoveryStarted = true;
+
+    window.addEventListener("eip6963:announceProvider", (event) => {
+      const detail = event.detail;
+      if (detail && isMetaMaskProvider(detail.provider, detail.info)) {
+        detectedMetaMaskProvider = detail.provider;
+      }
+    });
+
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+    detectedMetaMaskProvider = findInjectedMetaMaskProvider() || detectedMetaMaskProvider;
+  }
+
+  async function getMetaMaskProvider() {
+    discoverWalletProviders();
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+    let provider = findInjectedMetaMaskProvider();
+    if (provider) {
+      return provider;
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 300));
+    provider = findInjectedMetaMaskProvider();
+    if (provider) {
+      return provider;
+    }
+
+    if (window.ethereum) {
+      throw new Error("An Ethereum wallet is available, but MetaMask is not the active injected provider. Enable MetaMask for this site, select MetaMask as the active wallet provider, then refresh.");
+    }
+
+    const liveServerHint = window.location.protocol === "file:"
+      ? " Run the project through Live Server instead of opening index.html directly."
+      : "";
+    throw new Error(`MetaMask is not available in this browser. Open this page in a browser with the MetaMask extension enabled.${liveServerHint}`);
+  }
+
+  function findInjectedMetaMaskProvider() {
+    const ethereum = window.ethereum;
+    const providers = ethereum && Array.isArray(ethereum.providers) ? ethereum.providers : [];
+    const listedProvider = providers.find((provider) => isMetaMaskProvider(provider));
+
+    if (listedProvider) {
+      detectedMetaMaskProvider = listedProvider;
+      return listedProvider;
+    }
+
+    if (isMetaMaskProvider(ethereum)) {
+      detectedMetaMaskProvider = ethereum;
+      return ethereum;
+    }
+
+    return detectedMetaMaskProvider;
+  }
+
+  function isMetaMaskProvider(provider, info) {
+    return Boolean(
+      provider &&
+      provider.request &&
+      (
+        provider.isMetaMask ||
+        (info && info.rdns === "io.metamask") ||
+        (info && info.name && info.name.toLowerCase() === "metamask")
+      )
+    );
+  }
+
+  async function ensureSepoliaNetwork(provider) {
+    const currentChainId = await provider.request({ method: "eth_chainId" });
     if (currentChainId === CONFIG.chainIdHex) {
       return;
     }
 
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: CONFIG.chainIdHex }]
       });
@@ -503,7 +580,7 @@
         throw switchError;
       }
 
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_addEthereumChain",
         params: [{
           chainId: CONFIG.chainIdHex,
