@@ -11,12 +11,12 @@
     const confirm = ui.byId("walletPasswordConfirm").value;
 
     if (!password) {
-      ui.showMessage("Enter a keystore password before creating a wallet.", "error");
+      ui.showMessage("Enter a password to encrypt the new wallet keystore.", "error");
       return;
     }
 
     if (password !== confirm) {
-      ui.showMessage("The keystore passwords do not match.", "error");
+      ui.showMessage("The keystore passwords do not match. Re-enter the same password in both fields before creating the wallet.", "error");
       return;
     }
 
@@ -66,15 +66,16 @@
   }
 
   async function decryptKeystore(fileInputId, passwordInputId) {
+    const context = getKeystoreContext(fileInputId);
     const file = app.ui.byId(fileInputId).files[0];
     const password = app.ui.byId(passwordInputId).value;
 
     if (!file) {
-      throw new Error("Select a keystore JSON file.");
+      throw new Error(`Select the ${context} wallet keystore JSON file before loading it.`);
     }
 
     if (!password) {
-      throw new Error("Enter the keystore password.");
+      throw new Error(`Enter the password for the selected ${context} wallet keystore.`);
     }
 
     const fileText = await file.text();
@@ -82,10 +83,18 @@
     try {
       parsed = JSON.parse(fileText);
     } catch (error) {
-      throw new Error("The selected file is not valid JSON.");
+      throw new Error(`The selected ${context} wallet file is not valid JSON. Choose the encrypted keystore JSON downloaded from Create Wallet.`);
     }
 
-    return app.state.readWeb3.eth.accounts.decrypt(parsed, password);
+    try {
+      return app.state.readWeb3.eth.accounts.decrypt(parsed, password);
+    } catch (error) {
+      throw new Error(`Could not decrypt the ${context} wallet keystore. Check that the file belongs to this wallet and that the password is correct.`);
+    }
+  }
+
+  function getKeystoreContext(fileInputId) {
+    return fileInputId.includes("return") ? "return" : "purchase";
   }
 
   app.wallet = {
