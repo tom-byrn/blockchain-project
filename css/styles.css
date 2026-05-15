@@ -55,18 +55,6 @@ button {
   gap: 28px;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.brand h1 {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
-.brand p,
 .sidebar-note span {
   margin: 2px 0 0;
   color: #b9c6d4;
