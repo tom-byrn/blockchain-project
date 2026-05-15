@@ -71,7 +71,10 @@ const DEFAULT_ACCOUNT = {
 function createTestApp(options = {}) {
   const calls = {
     contractConstructed: [],
+    contractCalls: [],
     estimateGas: [],
+    gasPriceRequests: 0,
+    transactionCountRequests: [],
     signedTransactions: [],
     sentTransactions: [],
     createdObjectUrls: [],
@@ -308,9 +311,11 @@ function createWeb3(options, calls) {
         return options.balanceWei || "0";
       },
       async getGasPrice() {
+        calls.gasPriceRequests += 1;
         return options.gasPrice || "10";
       },
       async getTransactionCount(address, blockTag) {
+        calls.transactionCountRequests.push({ address, blockTag });
         calls.getTransactionCount = { address, blockTag };
         return options.nonce || 0;
       },
@@ -357,16 +362,16 @@ function createMockContract(options, calls) {
 
   return {
     methods: {
-      name: () => callMethod(values.name),
-      symbol: () => callMethod(values.symbol),
-      totalSupply: () => callMethod(values.totalSupply),
-      maxSupply: () => callMethod(values.maxSupply),
-      availableTickets: () => callMethod(values.available),
-      ticketPriceWei: () => callMethod(values.ticketPriceWei, options.ticketPriceError),
-      vendor: () => callMethod(values.vendor),
+      name: () => callMethod(calls, "name", values.name),
+      symbol: () => callMethod(calls, "symbol", values.symbol),
+      totalSupply: () => callMethod(calls, "totalSupply", values.totalSupply),
+      maxSupply: () => callMethod(calls, "maxSupply", values.maxSupply),
+      availableTickets: () => callMethod(calls, "availableTickets", values.available),
+      ticketPriceWei: () => callMethod(calls, "ticketPriceWei", values.ticketPriceWei, options.ticketPriceError),
+      vendor: () => callMethod(calls, "vendor", values.vendor),
       balanceOf: (address) => {
         calls.balanceOfAddress = address;
-        return callMethod(values.ticketBalance);
+        return callMethod(calls, "balanceOf", values.ticketBalance);
       },
       buyTicket: () => txMethod("buyTicket", "0xbuy", options.buyGas || "50000", calls),
       returnTicket: () => txMethod("returnTicket", "0xreturn", options.returnGas || "45000", calls)
@@ -374,9 +379,10 @@ function createMockContract(options, calls) {
   };
 }
 
-function callMethod(value, error) {
+function callMethod(calls, name, value, error) {
   return {
     async call() {
+      calls.contractCalls.push(name);
       if (error) {
         throw error;
       }

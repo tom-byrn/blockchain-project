@@ -9,6 +9,7 @@
     readWeb3: null,
     createdWallet: null,
     createdKeystoreJson: "",
+    contractInfoCache: null,
     buyKeystoreAccount: null,
     returnKeystoreAccount: null
   };
