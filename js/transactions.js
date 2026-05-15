@@ -38,8 +38,8 @@
       const receipt = await signAndSend(tx, app.state.buyKeystoreAccount.privateKey);
 
       renderTransaction("buy", tx, receipt);
-      await app.contract.refreshContractInfo();
       app.ui.showMessage("Ticket purchase confirmed on Sepolia.", "success");
+      refreshContractInfoInBackground();
     } catch (error) {
       app.ui.showMessage(app.ui.normalizeProviderError(error), "error");
     }
@@ -59,8 +59,8 @@
       const receipt = await signAndSend(tx, app.state.returnKeystoreAccount.privateKey);
 
       renderTransaction("return", tx, receipt);
-      await app.contract.refreshContractInfo();
       app.ui.showMessage("Ticket return confirmed on Sepolia. One ticket was transferred back to the venue wallet, so the attendee wallet has one fewer ticket and venue inventory has increased by one.", "success");
+      refreshContractInfoInBackground();
     } catch (error) {
       app.ui.showMessage(app.ui.normalizeProviderError(error), "error");
     }
@@ -75,18 +75,12 @@
       value: valueWei
     };
 
-    let gas;
-    try {
-      gas = await method.estimateGas({ from, value: valueWei });
-    } catch (error) {
-      throw new Error(`Transaction cannot be estimated: ${app.ui.normalizeProviderError(error)}`);
-    }
-
-    const gasWithBuffer = Math.ceil(Number(gas) * 1.2);
-    const [gasPrice, nonce] = await Promise.all([
+    const [gas, gasPrice, nonce] = await Promise.all([
+      estimateMethodGas(method, from, valueWei),
       app.state.readWeb3.eth.getGasPrice(),
       app.state.readWeb3.eth.getTransactionCount(from, "pending")
     ]);
+    const gasWithBuffer = Math.ceil(Number(gas) * 1.2);
 
     return {
       ...base,
@@ -97,9 +91,23 @@
     };
   }
 
+  async function estimateMethodGas(method, from, valueWei) {
+    try {
+      return await method.estimateGas({ from, value: valueWei });
+    } catch (error) {
+      throw new Error(`Transaction cannot be estimated: ${app.ui.normalizeProviderError(error)}`);
+    }
+  }
+
   async function signAndSend(tx, privateKey) {
     const signed = await app.state.readWeb3.eth.accounts.signTransaction(tx, privateKey);
     return app.state.readWeb3.eth.sendSignedTransaction(signed.rawTransaction);
+  }
+
+  function refreshContractInfoInBackground() {
+    app.contract.refreshContractInfo({ silent: true }).catch((error) => {
+      console.warn("Contract data refresh failed after transaction.", error);
+    });
   }
 
   function renderTransaction(context, request, receipt) {
@@ -108,8 +116,15 @@
 
     const hash = receipt.transactionHash;
     const linkContainer = app.ui.byId(`${context}ExplorerLink`);
+    linkContainer.replaceChildren();
+
     if (hash) {
-      linkContainer.innerHTML = `<a href="${app.config.explorerBaseUrl}/tx/${hash}" target="_blank" rel="noreferrer">View transaction on Sepolia Etherscan</a>`;
+      const link = document.createElement("a");
+      link.setAttribute("href", `${app.config.explorerBaseUrl}/tx/${hash}`);
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noreferrer");
+      link.textContent = "View transaction on Sepolia Etherscan";
+      linkContainer.appendChild(link);
     } else {
       linkContainer.textContent = "Transaction submitted, but no hash was returned.";
     }

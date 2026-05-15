@@ -119,6 +119,32 @@ test("balance checker reads SETH, ticket balance, and distribution", async () =>
   assert.equal(getById("appMessage").textContent, "Wallet balance check completed.");
 });
 
+test("balance checker starts SETH and ticket reads together", async () => {
+  const pendingBalance = deferred();
+  const address = "0x2222222222222222222222222222222222222222";
+  const { calls, getById, triggerDOMContentLoaded } = createTestApp({
+    balanceWei: pendingBalance.promise,
+    contractValues: {
+      ticketBalance: "1",
+      totalSupply: "100",
+      available: "99"
+    }
+  });
+  await triggerDOMContentLoaded();
+
+  getById("balanceAddress").value = address;
+  const checkPromise = getById("checkBalanceButton").click();
+  await waitForQueuedPromises();
+
+  assert.equal(calls.getBalanceAddress, address);
+  assert.deepEqual(calls.contractCalls, ["balanceOf", "totalSupply", "availableTickets"]);
+
+  pendingBalance.resolve("431000000000000000");
+  await checkPromise;
+
+  assert.equal(getById("appMessage").textContent, "Wallet balance check completed.");
+});
+
 test("balance checker explains Sepolia read failures", async () => {
   const { getById, triggerDOMContentLoaded } = createTestApp({
     balanceError: new Error("Sepolia RPC unavailable")
@@ -172,6 +198,28 @@ test("contract info refresh renders deployed token details", async () => {
   assert.equal(getById("appMessage").textContent, "Contract data loaded successfully.");
 });
 
+test("contract info refresh caches static values after the first read", async () => {
+  const { app, calls, triggerDOMContentLoaded } = createTestApp();
+  await triggerDOMContentLoaded();
+
+  await app.contract.refreshContractInfo();
+
+  assert.deepEqual(calls.contractCalls, [
+    "name",
+    "symbol",
+    "totalSupply",
+    "maxSupply",
+    "availableTickets",
+    "ticketPriceWei",
+    "vendor"
+  ]);
+
+  calls.contractCalls = [];
+  await app.contract.refreshContractInfo();
+
+  assert.deepEqual(calls.contractCalls, ["availableTickets"]);
+});
+
 test("buyWithKeystore signs and sends a contract transaction with ticket price", async () => {
   const buyer = "0x3333333333333333333333333333333333333333";
   const { app, calls, getById, triggerDOMContentLoaded } = createTestApp({
@@ -211,8 +259,87 @@ test("buyWithKeystore signs and sends a contract transaction with ticket price",
   assert.equal(calls.signedTransactions[0].privateKey, "0xbuyer-private-key");
   assert.deepEqual(calls.sentTransactions, ["0xsigned"]);
   assert.match(getById("buyTransactionRequest").value, /"data": "0xbuy"/);
-  assert.match(getById("buyExplorerLink").innerHTML, /0xabc/);
+  assert.equal(getById("buyExplorerLink").children.length, 1);
+  assert.equal(getById("buyExplorerLink").children[0].textContent, "View transaction on Sepolia Etherscan");
+  assert.equal(getById("buyExplorerLink").children[0].getAttribute("href"), `${app.config.explorerBaseUrl}/tx/0xabc`);
+  assert.equal(getById("buyExplorerLink").children[0].getAttribute("target"), "_blank");
+  assert.equal(getById("buyExplorerLink").children[0].getAttribute("rel"), "noreferrer");
   assert.equal(getById("appMessage").textContent, "Ticket purchase confirmed on Sepolia.");
+});
+
+test("buyWithKeystore starts gas price and nonce reads while gas is estimating", async () => {
+  const pendingGas = deferred();
+  const buyer = "0x3333333333333333333333333333333333333333";
+  const { app, calls, triggerDOMContentLoaded } = createTestApp({
+    buyGas: pendingGas.promise,
+    gasPrice: "42",
+    nonce: 9,
+    receipt: { transactionHash: "0xabc" },
+    contractValues: {
+      ticketPriceWei: "10000000000000"
+    }
+  });
+  await triggerDOMContentLoaded();
+  app.state.buyKeystoreAccount = {
+    address: buyer,
+    privateKey: "0xbuyer-private-key"
+  };
+
+  const buyPromise = app.transactions.buyWithKeystore();
+  await waitForQueuedPromises();
+
+  assert.equal(calls.estimateGas.length, 1);
+  assert.equal(calls.gasPriceRequests, 1);
+  assert.deepEqual(calls.transactionCountRequests, [{ address: buyer, blockTag: "pending" }]);
+
+  pendingGas.resolve("50000");
+  await buyPromise;
+
+  assert.deepEqual(calls.sentTransactions, ["0xsigned"]);
+});
+
+test("buyWithKeystore does not wait for contract stats refresh before confirming", async () => {
+  const pendingAvailable = deferred();
+  const buyer = "0x3333333333333333333333333333333333333333";
+  const { app, getById, triggerDOMContentLoaded } = createTestApp({
+    receipt: { transactionHash: "0xabc" },
+    contractValues: {
+      available: pendingAvailable.promise,
+      ticketPriceWei: "10000000000000"
+    }
+  });
+  await triggerDOMContentLoaded();
+  app.state.buyKeystoreAccount = {
+    address: buyer,
+    privateKey: "0xbuyer-private-key"
+  };
+
+  const buyPromise = app.transactions.buyWithKeystore();
+  const result = await Promise.race([buyPromise.then(() => "resolved"), wait(25).then(() => "pending")]);
+
+  assert.equal(result, "resolved");
+  assert.equal(getById("appMessage").textContent, "Ticket purchase confirmed on Sepolia.");
+
+  pendingAvailable.resolve("97");
+  await waitForQueuedPromises();
+});
+
+test("buyWithKeystore reports ticket price read failures before signing", async () => {
+  const buyer = "0x3333333333333333333333333333333333333333";
+  const { app, calls, getById, triggerDOMContentLoaded } = createTestApp({
+    ticketPriceError: new Error("Sepolia RPC timeout")
+  });
+  await triggerDOMContentLoaded();
+  app.state.buyKeystoreAccount = {
+    address: buyer,
+    privateKey: "0xbuyer-private-key"
+  };
+
+  await app.transactions.buyWithKeystore();
+
+  assert.equal(calls.signedTransactions.length, 0);
+  assert.equal(calls.sentTransactions.length, 0);
+  assert.equal(getById("appMessage").textContent, "Could not read the current ticket price from Sepolia. Sepolia RPC timeout");
 });
 
 test("returnWithKeystore explains the updated ticket state after return", async () => {
@@ -238,7 +365,8 @@ test("returnWithKeystore explains the updated ticket state after return", async 
     }
   });
   assert.match(getById("returnTransactionRequest").value, /"data": "0xreturn"/);
-  assert.match(getById("returnExplorerLink").innerHTML, /0xreturnhash/);
+  assert.equal(getById("returnExplorerLink").children.length, 1);
+  assert.equal(getById("returnExplorerLink").children[0].getAttribute("href"), `${app.config.explorerBaseUrl}/tx/0xreturnhash`);
   assert.equal(getById("appMessage").textContent, "Ticket return confirmed on Sepolia. One ticket was transferred back to the venue wallet, so the attendee wallet has one fewer ticket and venue inventory has increased by one.");
 });
 
@@ -248,4 +376,25 @@ function toPlainObject(value) {
 
 function getMessageDismissButton(message) {
   return message.children.find((child) => child.className === "app-message-dismiss");
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return { promise, resolve };
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+function waitForQueuedPromises() {
+  return new Promise((resolve) => {
+    setImmediate(resolve);
+  });
 }

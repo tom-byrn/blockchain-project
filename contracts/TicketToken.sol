@@ -149,6 +149,7 @@ contract TicketToken {
     /// @notice Returns one ticket from the caller to the venue wallet.
     /// @dev This is a token return only. It does not refund Sepolia ETH.
     function returnTicket() external {
+        require(msg.sender != vendor, "Vendor cannot return tickets");
         _transfer(msg.sender, vendor, 1);
         emit TicketReturned(msg.sender);
     }

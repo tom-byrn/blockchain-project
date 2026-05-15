@@ -34,11 +34,10 @@
 
     try {
       ui.showMessage("Checking wallet balances on Sepolia...", "");
-      const balanceWei = await app.state.readWeb3.eth.getBalance(address);
-      ui.byId("balanceWalletResult").textContent = ui.shortenAddress(address);
-      ui.byId("cryptoBalanceResult").textContent = `${ui.formatWei(balanceWei)} SETH`;
-
       if (!app.contract.isConfiguredAddress(app.config.contractAddress)) {
+        const balanceWei = await app.state.readWeb3.eth.getBalance(address);
+        ui.byId("balanceWalletResult").textContent = ui.shortenAddress(address);
+        ui.byId("cryptoBalanceResult").textContent = `${ui.formatWei(balanceWei)} SETH`;
         ui.byId("ticketBalanceResult").textContent = "Contract not configured";
         ui.byId("distributionResult").textContent = "Deploy first";
         ui.showMessage("SETH balance loaded. Add the contract address to js/config.js to load ticket balances.", "success");
@@ -46,13 +45,16 @@
       }
 
       const contract = app.contract.readContract();
-      const [ticketBalance, totalSupply, available] = await Promise.all([
+      const [balanceWei, ticketBalance, totalSupply, available] = await Promise.all([
+        app.state.readWeb3.eth.getBalance(address),
         contract.methods.balanceOf(address).call(),
-        contract.methods.totalSupply().call(),
+        app.contract.getTotalSupply(contract),
         contract.methods.availableTickets().call()
       ]);
       const sold = (BigInt(totalSupply) - BigInt(available)).toString();
 
+      ui.byId("balanceWalletResult").textContent = ui.shortenAddress(address);
+      ui.byId("cryptoBalanceResult").textContent = `${ui.formatWei(balanceWei)} SETH`;
       ui.byId("ticketBalanceResult").textContent = `${ticketBalance} ticket${ticketBalance === "1" ? "" : "s"}`;
       ui.byId("distributionResult").textContent = `${sold} sold, ${available} available`;
       ui.showMessage("Wallet balance check completed.", "success");
