@@ -28,6 +28,22 @@ npm test
 
 The tests use Node's built-in test runner and mocked browser/Web3 objects, so no local server or Sepolia RPC connection is required.
 
+## Current Sepolia Configuration
+
+The frontend is already configured in `js/config.js` for the deployed Sepolia contract:
+
+- RPC: `https://ethereum-sepolia-rpc.publicnode.com`
+- Chain ID: `11155111 / 0xaa36a7`
+- Contract: `0xE8d93935b59499b03782b35bFEe1aaaAEa7C7cD5`
+- Venue wallet: `0x1a18F2F851BAfDA9e11eA5cC82893F2729a11cC3`
+- Ticket price: `10000000000000` wei, or `0.00001` SETH
+
+The constructor arguments used for deployment were:
+
+```text
+"Campus Event Ticket", "TICKET", "0x1a18F2F851BAfDA9e11eA5cC82893F2729a11cC3", 10000000000000, 100
+```
+
 ## Deploying the Contract With Remix
 
 1. Open <https://remix.ethereum.org/>.

@@ -47,10 +47,10 @@
     <section class="tab-panel active" id="contractInfo">
       <div class="section-heading">
         <h3>Contract Info</h3>
-        <p>Use this page after deploying <code>contracts/TicketToken.sol</code> in Remix. Update <code>js/config.js</code> with the deployed address and venue wallet.</p>
+        <p>This project is configured for the deployed <code>TicketToken</code> contract on Sepolia. Use this page to verify the live contract values before buying or returning tickets.</p>
       </div>
 
-      <div class="grid two-columns">
+      <div class="grid">
         <article class="panel-card">
           <h4>Current configuration</h4>
           <dl class="detail-list">
@@ -76,13 +76,6 @@
             </div>
           </dl>
           <button class="primary-button" type="button" id="refreshContractButton">Read Contract</button>
-        </article>
-
-        <article class="panel-card">
-          <h4>Deployment values for Remix</h4>
-          <p class="muted">Suggested constructor arguments:</p>
-          <pre class="code-block">"Campus Event Ticket", "TICKET", "&lt;venue-wallet&gt;", 10000000000000, 100</pre>
-          <p class="muted">After deployment, paste the contract address and venue wallet address into <code>js/config.js</code>, then reload this page.</p>
         </article>
       </div>
 
