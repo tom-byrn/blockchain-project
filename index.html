@@ -38,7 +38,6 @@
         <p class="page-intro">Create keystore wallets, inspect SETH and ticket balances, buy one ERC-20 ticket, and return it to the venue.</p>
       </div>
       <div class="header-actions">
-        <button class="secondary-button" type="button" id="connectMetaMaskButton">Connect MetaMask</button>
         <span class="status-pill" id="configStatus">Checking config</span>
       </div>
     </header>
@@ -83,7 +82,7 @@
           <h4>Deployment values for Remix</h4>
           <p class="muted">Suggested constructor arguments:</p>
           <pre class="code-block">"Campus Event Ticket", "TICKET", "&lt;venue-wallet&gt;", 10000000000000, 100</pre>
-          <p class="muted">After deployment, paste the contract address and venue wallet address into <code>js/config.js</code>, then reload Live Server.</p>
+          <p class="muted">After deployment, paste the contract address and venue wallet address into <code>js/config.js</code>, then reload this page.</p>
         </article>
       </div>
 
@@ -163,7 +162,6 @@
         </label>
         <div class="button-row">
           <button class="primary-button" type="button" id="checkBalanceButton">Check Balances</button>
-          <button class="secondary-button" type="button" id="useMetaMaskForBalanceButton">Use MetaMask</button>
           <button class="secondary-button" type="button" id="useCreatedWalletForBalanceButton">Use Created Wallet</button>
           <button class="secondary-button" type="button" id="useVenueForBalanceButton">Use Venue</button>
         </div>
@@ -195,15 +193,9 @@
         <p>Buy exactly one ticket token using the configured Sepolia ticket price.</p>
       </div>
 
-      <div class="grid two-columns">
+      <div class="grid">
         <article class="panel-card form-stack">
-          <h4>Buy with MetaMask</h4>
-          <p class="muted">MetaMask signs the transaction and shows the Sepolia gas estimate before submission.</p>
-          <button class="primary-button" type="button" id="buyWithMetaMaskButton">Buy Ticket with MetaMask</button>
-        </article>
-
-        <article class="panel-card form-stack">
-          <h4>Buy with keystore</h4>
+          <h4>Buy with keystore wallet</h4>
           <label>
             Keystore JSON file
             <input type="file" id="buyKeystoreFile" accept=".json,application/json">
@@ -243,15 +235,9 @@
         <p>Return one ticket token to the venue wallet. This project models returns as token transfers without refunds.</p>
       </div>
 
-      <div class="grid two-columns">
+      <div class="grid">
         <article class="panel-card form-stack">
-          <h4>Return with MetaMask</h4>
-          <p class="muted">Use this when the ticket holder controls the wallet in MetaMask.</p>
-          <button class="primary-button" type="button" id="returnWithMetaMaskButton">Return Ticket with MetaMask</button>
-        </article>
-
-        <article class="panel-card form-stack">
-          <h4>Return with keystore</h4>
+          <h4>Return with keystore wallet</h4>
           <label>
             Keystore JSON file
             <input type="file" id="returnKeystoreFile" accept=".json,application/json">
