@@ -362,7 +362,7 @@ function createMockContract(options, calls) {
       totalSupply: () => callMethod(values.totalSupply),
       maxSupply: () => callMethod(values.maxSupply),
       availableTickets: () => callMethod(values.available),
-      ticketPriceWei: () => callMethod(values.ticketPriceWei),
+      ticketPriceWei: () => callMethod(values.ticketPriceWei, options.ticketPriceError),
       vendor: () => callMethod(values.vendor),
       balanceOf: (address) => {
         calls.balanceOfAddress = address;
@@ -374,9 +374,12 @@ function createMockContract(options, calls) {
   };
 }
 
-function callMethod(value) {
+function callMethod(value, error) {
   return {
     async call() {
+      if (error) {
+        throw error;
+      }
       return value;
     }
   };

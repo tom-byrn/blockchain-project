@@ -108,8 +108,15 @@
 
     const hash = receipt.transactionHash;
     const linkContainer = app.ui.byId(`${context}ExplorerLink`);
+    linkContainer.replaceChildren();
+
     if (hash) {
-      linkContainer.innerHTML = `<a href="${app.config.explorerBaseUrl}/tx/${hash}" target="_blank" rel="noreferrer">View transaction on Sepolia Etherscan</a>`;
+      const link = document.createElement("a");
+      link.setAttribute("href", `${app.config.explorerBaseUrl}/tx/${hash}`);
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noreferrer");
+      link.textContent = "View transaction on Sepolia Etherscan";
+      linkContainer.appendChild(link);
     } else {
       linkContainer.textContent = "Transaction submitted, but no hash was returned.";
     }

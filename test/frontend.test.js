@@ -211,8 +211,30 @@ test("buyWithKeystore signs and sends a contract transaction with ticket price",
   assert.equal(calls.signedTransactions[0].privateKey, "0xbuyer-private-key");
   assert.deepEqual(calls.sentTransactions, ["0xsigned"]);
   assert.match(getById("buyTransactionRequest").value, /"data": "0xbuy"/);
-  assert.match(getById("buyExplorerLink").innerHTML, /0xabc/);
+  assert.equal(getById("buyExplorerLink").children.length, 1);
+  assert.equal(getById("buyExplorerLink").children[0].textContent, "View transaction on Sepolia Etherscan");
+  assert.equal(getById("buyExplorerLink").children[0].getAttribute("href"), `${app.config.explorerBaseUrl}/tx/0xabc`);
+  assert.equal(getById("buyExplorerLink").children[0].getAttribute("target"), "_blank");
+  assert.equal(getById("buyExplorerLink").children[0].getAttribute("rel"), "noreferrer");
   assert.equal(getById("appMessage").textContent, "Ticket purchase confirmed on Sepolia.");
+});
+
+test("buyWithKeystore reports ticket price read failures before signing", async () => {
+  const buyer = "0x3333333333333333333333333333333333333333";
+  const { app, calls, getById, triggerDOMContentLoaded } = createTestApp({
+    ticketPriceError: new Error("Sepolia RPC timeout")
+  });
+  await triggerDOMContentLoaded();
+  app.state.buyKeystoreAccount = {
+    address: buyer,
+    privateKey: "0xbuyer-private-key"
+  };
+
+  await app.transactions.buyWithKeystore();
+
+  assert.equal(calls.signedTransactions.length, 0);
+  assert.equal(calls.sentTransactions.length, 0);
+  assert.equal(getById("appMessage").textContent, "Could not read the current ticket price from Sepolia. Sepolia RPC timeout");
 });
 
 test("returnWithKeystore explains the updated ticket state after return", async () => {
@@ -238,7 +260,8 @@ test("returnWithKeystore explains the updated ticket state after return", async 
     }
   });
   assert.match(getById("returnTransactionRequest").value, /"data": "0xreturn"/);
-  assert.match(getById("returnExplorerLink").innerHTML, /0xreturnhash/);
+  assert.equal(getById("returnExplorerLink").children.length, 1);
+  assert.equal(getById("returnExplorerLink").children[0].getAttribute("href"), `${app.config.explorerBaseUrl}/tx/0xreturnhash`);
   assert.equal(getById("appMessage").textContent, "Ticket return confirmed on Sepolia. One ticket was transferred back to the venue wallet, so the attendee wallet has one fewer ticket and venue inventory has increased by one.");
 });
 

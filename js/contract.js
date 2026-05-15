@@ -61,7 +61,7 @@
       app.ui.byId("ticketPriceText").textContent = `${app.ui.formatWei(price)} SETH (${price} wei)`;
       return price;
     } catch (error) {
-      return app.config.ticketPriceWei;
+      throw new Error(`Could not read the current ticket price from Sepolia. ${app.ui.normalizeProviderError(error)}`);
     }
   }
 
