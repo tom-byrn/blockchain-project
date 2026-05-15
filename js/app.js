@@ -28,11 +28,16 @@
   function bindTabs() {
     document.querySelectorAll(".tab-button").forEach((button) => {
       button.addEventListener("click", () => {
+        const isChangingTab = !button.classList.contains("active");
         document.querySelectorAll(".tab-button").forEach((tab) => tab.classList.remove("active"));
         document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.remove("active"));
 
         button.classList.add("active");
         document.getElementById(button.dataset.tab).classList.add("active");
+
+        if (isChangingTab) {
+          clearMessage();
+        }
       });
     });
   }
@@ -63,6 +68,10 @@
     const box = byId("appMessage");
     box.textContent = message;
     box.className = `app-message ${type || ""}`.trim();
+  }
+
+  function clearMessage() {
+    showMessage("", "");
   }
 
   function renderStaticConfig() {
