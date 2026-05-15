@@ -9,19 +9,16 @@
   let createdKeystoreJson = "";
   let buyKeystoreAccount = null;
   let returnKeystoreAccount = null;
-  let detectedMetaMaskProvider = null;
-  let providerDiscoveryStarted = false;
 
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
     if (!window.Web3) {
-      showMessage("Web3.js did not load. Check your internet connection and refresh Live Server.", "error");
+      showMessage("Web3.js did not load. Check your internet connection and refresh the page.", "error");
       return;
     }
 
     readWeb3 = new Web3(CONFIG.rpcUrl);
-    discoverWalletProviders();
     bindTabs();
     bindActions();
     renderStaticConfig();
@@ -41,7 +38,6 @@
   }
 
   function bindActions() {
-    byId("connectMetaMaskButton").addEventListener("click", connectMetaMaskClick);
     byId("refreshContractButton").addEventListener("click", refreshContractInfo);
 
     byId("createWalletForm").addEventListener("submit", createWallet);
@@ -49,17 +45,14 @@
     byId("togglePrivateKeyButton").addEventListener("click", togglePrivateKey);
 
     byId("checkBalanceButton").addEventListener("click", checkBalances);
-    byId("useMetaMaskForBalanceButton").addEventListener("click", useMetaMaskForBalance);
     byId("useCreatedWalletForBalanceButton").addEventListener("click", useCreatedWalletForBalance);
     byId("useVenueForBalanceButton").addEventListener("click", useVenueForBalance);
 
     byId("loadBuyKeystoreButton").addEventListener("click", loadBuyKeystore);
     byId("buyWithKeystoreButton").addEventListener("click", buyWithKeystore);
-    byId("buyWithMetaMaskButton").addEventListener("click", buyWithMetaMask);
 
     byId("loadReturnKeystoreButton").addEventListener("click", loadReturnKeystore);
     byId("returnWithKeystoreButton").addEventListener("click", returnWithKeystore);
-    byId("returnWithMetaMaskButton").addEventListener("click", returnWithMetaMask);
   }
 
   function byId(id) {
@@ -216,16 +209,6 @@
     URL.revokeObjectURL(url);
   }
 
-  async function useMetaMaskForBalance() {
-    try {
-      const { account } = await ensureMetaMaskAccount();
-      byId("balanceAddress").value = account;
-      showMessage("MetaMask address copied into the balance checker.", "success");
-    } catch (error) {
-      showMessage(error.message, "error");
-    }
-  }
-
   function useCreatedWalletForBalance() {
     if (!createdWallet) {
       showMessage("Create a wallet first.", "error");
@@ -326,34 +309,6 @@
     return readWeb3.eth.accounts.decrypt(parsed, password);
   }
 
-  async function buyWithMetaMask() {
-    try {
-      requireContractConfig();
-      showMessage("Opening MetaMask purchase transaction...", "");
-      const { account, provider } = await ensureMetaMaskAccount();
-      const providerWeb3 = new Web3(provider);
-      const contract = new providerWeb3.eth.Contract(CONFIG.abi, CONFIG.contractAddress);
-      const ticketPriceWei = await getTicketPriceWei();
-      const request = {
-        from: account,
-        to: CONFIG.contractAddress,
-        value: ticketPriceWei,
-        method: "buyTicket"
-      };
-
-      const receipt = await contract.methods.buyTicket().send({
-        from: account,
-        value: ticketPriceWei
-      });
-
-      renderTransaction("buy", request, receipt);
-      await refreshContractInfo();
-      showMessage("Ticket purchase confirmed on Sepolia.", "success");
-    } catch (error) {
-      showMessage(normalizeProviderError(error), "error");
-    }
-  }
-
   async function buyWithKeystore() {
     try {
       requireContractConfig();
@@ -371,29 +326,6 @@
       renderTransaction("buy", tx, receipt);
       await refreshContractInfo();
       showMessage("Ticket purchase confirmed on Sepolia.", "success");
-    } catch (error) {
-      showMessage(normalizeProviderError(error), "error");
-    }
-  }
-
-  async function returnWithMetaMask() {
-    try {
-      requireContractConfig();
-      showMessage("Opening MetaMask return transaction...", "");
-      const { account, provider } = await ensureMetaMaskAccount();
-      const providerWeb3 = new Web3(provider);
-      const contract = new providerWeb3.eth.Contract(CONFIG.abi, CONFIG.contractAddress);
-      const request = {
-        from: account,
-        to: CONFIG.contractAddress,
-        method: "returnTicket"
-      };
-
-      const receipt = await contract.methods.returnTicket().send({ from: account });
-
-      renderTransaction("return", request, receipt);
-      await refreshContractInfo();
-      showMessage("Ticket return confirmed on Sepolia.", "success");
     } catch (error) {
       showMessage(normalizeProviderError(error), "error");
     }
@@ -465,132 +397,6 @@
   async function signAndSend(tx, privateKey) {
     const signed = await readWeb3.eth.accounts.signTransaction(tx, privateKey);
     return readWeb3.eth.sendSignedTransaction(signed.rawTransaction);
-  }
-
-  async function connectMetaMaskClick() {
-    try {
-      const { account } = await ensureMetaMaskAccount();
-      showMessage(`MetaMask connected: ${shortenAddress(account)}`, "success");
-    } catch (error) {
-      showMessage(error.message, "error");
-    }
-  }
-
-  async function ensureMetaMaskAccount() {
-    const provider = await getMetaMaskProvider();
-
-    await ensureSepoliaNetwork(provider);
-    const accounts = await provider.request({ method: "eth_requestAccounts" });
-    if (!accounts || accounts.length === 0) {
-      throw new Error("No MetaMask account was selected.");
-    }
-
-    return {
-      account: accounts[0],
-      provider
-    };
-  }
-
-  function discoverWalletProviders() {
-    if (providerDiscoveryStarted) {
-      return;
-    }
-
-    providerDiscoveryStarted = true;
-
-    window.addEventListener("eip6963:announceProvider", (event) => {
-      const detail = event.detail;
-      if (detail && isMetaMaskProvider(detail.provider, detail.info)) {
-        detectedMetaMaskProvider = detail.provider;
-      }
-    });
-
-    window.dispatchEvent(new Event("eip6963:requestProvider"));
-    detectedMetaMaskProvider = findInjectedMetaMaskProvider() || detectedMetaMaskProvider;
-  }
-
-  async function getMetaMaskProvider() {
-    discoverWalletProviders();
-    window.dispatchEvent(new Event("eip6963:requestProvider"));
-
-    let provider = findInjectedMetaMaskProvider();
-    if (provider) {
-      return provider;
-    }
-
-    await new Promise((resolve) => window.setTimeout(resolve, 300));
-    provider = findInjectedMetaMaskProvider();
-    if (provider) {
-      return provider;
-    }
-
-    if (window.ethereum) {
-      throw new Error("An Ethereum wallet is available, but MetaMask is not the active injected provider. Enable MetaMask for this site, select MetaMask as the active wallet provider, then refresh.");
-    }
-
-    const liveServerHint = window.location.protocol === "file:"
-      ? " Run the project through Live Server instead of opening index.html directly."
-      : "";
-    throw new Error(`MetaMask is not available in this browser. Open this page in a browser with the MetaMask extension enabled.${liveServerHint}`);
-  }
-
-  function findInjectedMetaMaskProvider() {
-    const ethereum = window.ethereum;
-    const providers = ethereum && Array.isArray(ethereum.providers) ? ethereum.providers : [];
-    const listedProvider = providers.find((provider) => isMetaMaskProvider(provider));
-
-    if (listedProvider) {
-      detectedMetaMaskProvider = listedProvider;
-      return listedProvider;
-    }
-
-    if (isMetaMaskProvider(ethereum)) {
-      detectedMetaMaskProvider = ethereum;
-      return ethereum;
-    }
-
-    return detectedMetaMaskProvider;
-  }
-
-  function isMetaMaskProvider(provider, info) {
-    return Boolean(
-      provider &&
-      provider.request &&
-      (
-        provider.isMetaMask ||
-        (info && info.rdns === "io.metamask") ||
-        (info && info.name && info.name.toLowerCase() === "metamask")
-      )
-    );
-  }
-
-  async function ensureSepoliaNetwork(provider) {
-    const currentChainId = await provider.request({ method: "eth_chainId" });
-    if (currentChainId === CONFIG.chainIdHex) {
-      return;
-    }
-
-    try {
-      await provider.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: CONFIG.chainIdHex }]
-      });
-    } catch (switchError) {
-      if (switchError.code !== 4902) {
-        throw switchError;
-      }
-
-      await provider.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: CONFIG.chainIdHex,
-          chainName: "Sepolia",
-          nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
-          rpcUrls: [CONFIG.rpcUrl],
-          blockExplorerUrls: [CONFIG.explorerBaseUrl]
-        }]
-      });
-    }
   }
 
   function renderTransaction(context, request, receipt) {
