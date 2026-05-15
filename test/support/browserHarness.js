@@ -302,6 +302,9 @@ function createWeb3(options, calls) {
       },
       async getBalance(address) {
         calls.getBalanceAddress = address;
+        if (options.balanceError) {
+          throw options.balanceError;
+        }
         return options.balanceWei || "0";
       },
       async getGasPrice() {

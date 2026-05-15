@@ -60,7 +60,7 @@
 
       renderTransaction("return", tx, receipt);
       await app.contract.refreshContractInfo();
-      app.ui.showMessage("Ticket return confirmed on Sepolia.", "success");
+      app.ui.showMessage("Ticket return confirmed on Sepolia. One ticket was transferred back to the venue wallet, so the attendee wallet has one fewer ticket and venue inventory has increased by one.", "success");
     } catch (error) {
       app.ui.showMessage(app.ui.normalizeProviderError(error), "error");
     }

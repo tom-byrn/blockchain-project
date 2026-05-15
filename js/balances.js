@@ -28,7 +28,7 @@
     const address = ui.byId("balanceAddress").value.trim();
 
     if (!Web3.utils.isAddress(address)) {
-      ui.showMessage("Enter a valid Ethereum wallet address.", "error");
+      ui.showMessage(getWalletAddressValidationMessage(address), "error");
       return;
     }
 
@@ -57,8 +57,16 @@
       ui.byId("distributionResult").textContent = `${sold} sold, ${available} available`;
       ui.showMessage("Wallet balance check completed.", "success");
     } catch (error) {
-      ui.showMessage(error.message, "error");
+      ui.showMessage(`Could not read SETH or ticket balances for ${ui.shortenAddress(address)} from Sepolia. ${ui.normalizeProviderError(error)}`, "error");
     }
+  }
+
+  function getWalletAddressValidationMessage(address) {
+    if (!address) {
+      return "Enter the wallet address you want to check.";
+    }
+
+    return `Wallet address "${address}" is not valid. Ethereum addresses must start with 0x and contain 40 hexadecimal characters.`;
   }
 
   app.balances = {

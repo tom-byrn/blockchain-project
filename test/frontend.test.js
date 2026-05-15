@@ -61,7 +61,7 @@ test("wallet creation validates passwords and renders keystore details", async (
   getById("walletPasswordConfirm").value = "secret-two";
   await getById("createWalletForm").submit();
 
-  assert.equal(getById("appMessage").textContent, "The keystore passwords do not match.");
+  assert.equal(getById("appMessage").textContent, "The keystore passwords do not match. Re-enter the same password in both fields before creating the wallet.");
   assert.equal(app.state.createdWallet, null);
 
   getById("walletPasswordConfirm").value = "secret-one";
@@ -79,6 +79,21 @@ test("wallet creation validates passwords and renders keystore details", async (
 
   assert.equal(getById("createdPrivateKey").type, "text");
   assert.equal(getById("togglePrivateKeyButton").textContent, "Hide");
+});
+
+test("balance checker gives specific messages for empty and malformed addresses", async () => {
+  const { getById, triggerDOMContentLoaded } = createTestApp();
+  await triggerDOMContentLoaded();
+
+  getById("balanceAddress").value = "";
+  await getById("checkBalanceButton").click();
+
+  assert.equal(getById("appMessage").textContent, "Enter the wallet address you want to check.");
+
+  getById("balanceAddress").value = "not-a-wallet";
+  await getById("checkBalanceButton").click();
+
+  assert.equal(getById("appMessage").textContent, "Wallet address \"not-a-wallet\" is not valid. Ethereum addresses must start with 0x and contain 40 hexadecimal characters.");
 });
 
 test("balance checker reads SETH, ticket balance, and distribution", async () => {
@@ -102,6 +117,36 @@ test("balance checker reads SETH, ticket balance, and distribution", async () =>
   assert.equal(getById("ticketBalanceResult").textContent, "1 ticket");
   assert.equal(getById("distributionResult").textContent, "1 sold, 99 available");
   assert.equal(getById("appMessage").textContent, "Wallet balance check completed.");
+});
+
+test("balance checker explains Sepolia read failures", async () => {
+  const { getById, triggerDOMContentLoaded } = createTestApp({
+    balanceError: new Error("Sepolia RPC unavailable")
+  });
+  await triggerDOMContentLoaded();
+
+  getById("balanceAddress").value = "0x5555555555555555555555555555555555555555";
+  await getById("checkBalanceButton").click();
+
+  assert.equal(getById("appMessage").textContent, "Could not read SETH or ticket balances for 0x5555...5555 from Sepolia. Sepolia RPC unavailable");
+});
+
+test("keystore loading explains missing and incorrect passwords", async () => {
+  const { getById, triggerDOMContentLoaded } = createTestApp({
+    decryptError: new Error("Key derivation failed - possibly wrong password")
+  });
+  await triggerDOMContentLoaded();
+
+  getById("buyKeystoreFile").files = [{ text: async () => "{\"version\":3}" }];
+  getById("buyKeystorePassword").value = "";
+  await getById("loadBuyKeystoreButton").click();
+
+  assert.equal(getById("appMessage").textContent, "Enter the password for the selected purchase wallet keystore.");
+
+  getById("buyKeystorePassword").value = "wrong-password";
+  await getById("loadBuyKeystoreButton").click();
+
+  assert.equal(getById("appMessage").textContent, "Could not decrypt the purchase wallet keystore. Check that the file belongs to this wallet and that the password is correct.");
 });
 
 test("contract info refresh renders deployed token details", async () => {
@@ -168,6 +213,33 @@ test("buyWithKeystore signs and sends a contract transaction with ticket price",
   assert.match(getById("buyTransactionRequest").value, /"data": "0xbuy"/);
   assert.match(getById("buyExplorerLink").innerHTML, /0xabc/);
   assert.equal(getById("appMessage").textContent, "Ticket purchase confirmed on Sepolia.");
+});
+
+test("returnWithKeystore explains the updated ticket state after return", async () => {
+  const attendee = "0x4444444444444444444444444444444444444444";
+  const { app, calls, getById, triggerDOMContentLoaded } = createTestApp({
+    gasPrice: "42",
+    nonce: 10,
+    receipt: { transactionHash: "0xreturnhash" }
+  });
+  await triggerDOMContentLoaded();
+  app.state.returnKeystoreAccount = {
+    address: attendee,
+    privateKey: "0xattendee-private-key"
+  };
+
+  await app.transactions.returnWithKeystore();
+
+  assert.deepEqual(toPlainObject(calls.estimateGas[0]), {
+    name: "returnTicket",
+    args: {
+      from: attendee,
+      value: "0"
+    }
+  });
+  assert.match(getById("returnTransactionRequest").value, /"data": "0xreturn"/);
+  assert.match(getById("returnExplorerLink").innerHTML, /0xreturnhash/);
+  assert.equal(getById("appMessage").textContent, "Ticket return confirmed on Sepolia. One ticket was transferred back to the venue wallet, so the attendee wallet has one fewer ticket and venue inventory has increased by one.");
 });
 
 function toPlainObject(value) {
