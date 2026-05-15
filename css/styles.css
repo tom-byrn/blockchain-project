@@ -169,6 +169,10 @@ button {
 }
 
 .app-message {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   min-height: 44px;
   margin-bottom: 18px;
   padding: 11px 14px;
@@ -180,6 +184,44 @@ button {
 
 .app-message:empty {
   display: none;
+}
+
+.app-message-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.app-message-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin: -3px -4px -3px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.app-message-dismiss::before {
+  content: "X";
+  font-size: 0.9rem;
+}
+
+.app-message-dismiss:hover {
+  background: rgb(15 23 42 / 8%);
+}
+
+.app-message-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 .app-message.error {

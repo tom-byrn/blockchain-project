@@ -10,12 +10,42 @@ test("tab navigation clears stale app messages", async () => {
   await getById("useCreatedWalletForBalanceButton").click();
   assert.equal(getById("appMessage").textContent, "Create a wallet first.");
   assert.equal(getById("appMessage").className, "app-message error");
+  assert.equal(getMessageDismissButton(getById("appMessage")).getAttribute("aria-label"), "Dismiss message");
 
   await tabs.find((tab) => tab.dataset.tab === "returnTicket").click();
 
   assert.equal(getById("appMessage").textContent, "");
   assert.equal(getById("appMessage").className, "app-message");
   assert.equal(getById("returnTicket").classList.contains("active"), true);
+});
+
+test("message dismiss button clears the current app message", async () => {
+  const { app, getById, triggerDOMContentLoaded } = createTestApp();
+  await triggerDOMContentLoaded();
+
+  await getById("useCreatedWalletForBalanceButton").click();
+  const message = getById("appMessage");
+
+  assert.equal(message.textContent, "Create a wallet first.");
+  assert.equal(message.children.length, 2);
+  assert.equal(message.children[0].className, "app-message-text");
+  assert.equal(message.children[1].className, "app-message-dismiss");
+
+  await getMessageDismissButton(message).click();
+
+  assert.equal(message.textContent, "");
+  assert.equal(message.className, "app-message");
+  assert.equal(message.children.length, 0);
+
+  app.ui.showMessage("Ticket purchase confirmed on Sepolia.", "success");
+
+  assert.equal(message.textContent, "Ticket purchase confirmed on Sepolia.");
+  assert.equal(message.className, "app-message success");
+
+  await getMessageDismissButton(message).click();
+
+  assert.equal(message.textContent, "");
+  assert.equal(message.className, "app-message");
 });
 
 test("wallet creation validates passwords and renders keystore details", async () => {
@@ -142,4 +172,8 @@ test("buyWithKeystore signs and sends a contract transaction with ticket price",
 
 function toPlainObject(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function getMessageDismissButton(message) {
+  return message.children.find((child) => child.className === "app-message-dismiss");
 }

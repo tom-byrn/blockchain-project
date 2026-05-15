@@ -150,8 +150,9 @@ function createClassList(initial = []) {
 
 function createElement(id, classNames = []) {
   const listeners = {};
-
-  return {
+  const element = {
+    attributes: {},
+    children: [],
     id,
     dataset: {},
     value: "",
@@ -164,7 +165,26 @@ function createElement(id, classNames = []) {
     files: [],
     href: "",
     download: "",
-    appendChild() {},
+    appendChild(child) {
+      this.children.push(child);
+      refreshTextContent(this);
+      return child;
+    },
+    replaceChildren(...children) {
+      this.children = [];
+      this.textContent = "";
+      this.innerHTML = "";
+
+      for (const child of children) {
+        this.appendChild(child);
+      }
+    },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+    getAttribute(name) {
+      return this.attributes[name] || null;
+    },
     addEventListener(type, handler) {
       listeners[type] = listeners[type] || [];
       listeners[type].push(handler);
@@ -182,8 +202,15 @@ function createElement(id, classNames = []) {
     remove() {},
     removeAttribute(name) {
       delete this[name];
+      delete this.attributes[name];
     }
   };
+
+  return element;
+}
+
+function refreshTextContent(element) {
+  element.textContent = element.children.map((child) => child.textContent).join("");
 }
 
 function createTabs(elements) {

@@ -26,8 +26,25 @@
 
   function showMessage(message, type) {
     const box = byId("appMessage");
-    box.textContent = message;
     box.className = `app-message ${type || ""}`.trim();
+    box.replaceChildren();
+
+    if (!message) {
+      return;
+    }
+
+    const messageText = document.createElement("span");
+    messageText.className = "app-message-text";
+    messageText.textContent = message;
+
+    const dismissButton = document.createElement("button");
+    dismissButton.type = "button";
+    dismissButton.className = "app-message-dismiss";
+    dismissButton.setAttribute("aria-label", "Dismiss message");
+    dismissButton.addEventListener("click", clearMessage);
+
+    box.appendChild(messageText);
+    box.appendChild(dismissButton);
   }
 
   function clearMessage() {
